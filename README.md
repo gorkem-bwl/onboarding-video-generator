@@ -1,4 +1,4 @@
-# onboarding-video-generator
+# Onboarding video generator
 
 A Claude Code skill that produces short, column-sized web app onboarding videos in [Remotion](https://www.remotion.dev). Each video showcases one feature working — a single button click, a modal opening, a row landing in a list — with the kind of UI motion that goes well next to body copy in a two-column block on a marketing page.
 
