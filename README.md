@@ -12,7 +12,8 @@ Most "feature video" tools render full-screen demos that get shrunk into a colum
 
 VerifyWise "Add task" feature, ~12s. Five beats: toolbar with Add button → modal opens → form fills (typing, priority flip, date) → submit → result with summary cards ticking and new row sliding in.
 
-<video src="https://github.com/gorkem-bwl/onboarding-video-generator/raw/main/examples/add-task-verifywise.mp4" controls width="640"></video>
+https://github.com/user-attachments/assets/dabf7f9f-0ec0-4faa-bea2-bf68dc3b6eca
+
 
 If your browser doesn't render the embed, [download the MP4](./examples/add-task-verifywise.mp4).
 
