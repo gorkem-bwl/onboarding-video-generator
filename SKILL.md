@@ -90,17 +90,29 @@ Project conventions:
 
 ### 6. Verify cursor coordinates before final render
 
-Two complementary tools:
+**This step is mandatory for every beat that has a click, ripple, or glow ring. Skipping it costs a full re-render.**
 
-**A. Coordinate picker (use first).** Open `resources/coordinate-picker.html` in a browser, drop the screenshot in, click the target, copy the generated `<Pointer>` config. Handles canvas-coord scaling automatically — a click in a half-size browser window still produces correct 1280×960 coordinates.
+Three complementary tools, in order:
 
-**B. DebugCrosshair (use to verify in-scene).** After pasting the picker's output into your scene, drop `<DebugCrosshair x={...} y={...} label="..."/>` at the same coords inside the scene component. Render a single still:
+**A. Coordinate picker (first pass).** Open `resources/coordinate-picker.html` in a browser, drop the screenshot in, click the target, copy the generated `<Pointer>` config. Handles canvas-coord scaling automatically — a click in a half-size browser window still produces correct 1280×960 coordinates.
+
+**B. Render a still at the click frame (second pass — REQUIRED before first full render).** When you rebuild a slice in JSX, the picker's coords are based on the source screenshot, but the rebuild may not align pixel-for-pixel. Render a still at the global frame where the cursor arrives:
 
 ```bash
 npm run render:still -- --frame=<global-arrival-frame>
 ```
 
-If the crosshair sits inside the target, the click will land. **Remove all `<DebugCrosshair>` instances before the final render.**
+Open the still and visually check: the cursor's tip is *inside* the target. The HIGH RISK chip / Save button / glow ring is *exactly* where you intended. Do this for every interactive beat.
+
+**Computing the global arrival frame.** Sequences overlap by `CROSSFADE_FRAMES` (default 12). Beat N starts at:
+
+```
+globalStart(N) = sum(durationFrames of beats 0..N-1) - N * CROSSFADE_FRAMES
+```
+
+So if your beats are 75, 60, 135, 75, 60, 90 frames and you want to verify a click at local frame 32 of beat 4 (index 3): `globalStart = 75 + 60 + 135 - 3*12 = 234`, then `globalFrame = 234 + 32 = 266`. Use the `beatGlobalFrame()` helper in `src/beats.ts` to do this math automatically.
+
+**C. DebugCrosshair (third pass — when coords are wrong).** If the still in pass B shows the cursor missing the target, drop `<DebugCrosshair x={...} y={...} label="..."/>` next to the cursor in the scene at the same coords as the waypoint, render again. The crosshair makes the *intended* coords visually obvious so you can see how far off they are. **Remove all `<DebugCrosshair>` instances before the final render.**
 
 ### 6b. Choose SingleBeat vs SceneGroup
 

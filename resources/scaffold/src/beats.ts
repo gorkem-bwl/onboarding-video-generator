@@ -72,3 +72,27 @@ export const activeSubBeat = (frame: number, subBeats: SubBeat[]): SubBeat => {
   }
   return active;
 };
+
+// Returns the global frame number where a beat starts in the rendered video,
+// accounting for crossfade overlaps. Use to convert local arrival frames into
+// the --frame argument for `npm run render:still`.
+//
+// Example:
+//   beatGlobalFrame(BEATS, "fill-fields", 32, CROSSFADE_FRAMES)
+//   → returns the global frame at which local frame 32 of beat "fill-fields"
+//     plays in the final video.
+export const beatGlobalFrame = (
+  beats: BeatLike[],
+  beatId: string,
+  localFrame: number,
+  crossfadeFrames: number = CROSSFADE_FRAMES
+): number => {
+  let globalStart = 0;
+  for (let i = 0; i < beats.length; i++) {
+    if (beats[i].id === beatId) {
+      return globalStart + localFrame;
+    }
+    globalStart += beats[i].durationFrames - crossfadeFrames;
+  }
+  throw new Error(`Beat id "${beatId}" not found in BEATS`);
+};
