@@ -1,0 +1,25 @@
+{
+  "name": "feature-video",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts FeatureVideo out/feature.mp4 --codec=h264 && remotion render src/index.ts FeatureVideo out/feature.webm --codec=vp9",
+    "render:mp4": "remotion render src/index.ts FeatureVideo out/feature.mp4 --codec=h264",
+    "render:webm": "remotion render src/index.ts FeatureVideo out/feature.webm --codec=vp9",
+    "render:still": "remotion still src/index.ts FeatureVideo out/preview.png",
+    "ship": "npm run render && bash -c 'mkdir -p \"${SHIP_DEST:?Set SHIP_DEST to the destination folder}\" && cp out/feature.mp4 \"${SHIP_DEST}/feature.mp4\" && cp out/feature.webm \"${SHIP_DEST}/feature.webm\" && echo \"Shipped to ${SHIP_DEST}\"'"
+  },
+  "//": "Remotion versions: pull `latest` at scaffold time. Run `npm view remotion version` and pin to that exact version. Do not invent versions like 4.0.190 — they may not exist.",
+  "dependencies": {
+    "@remotion/cli": "latest",
+    "@remotion/transitions": "latest",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.3",
+    "typescript": "5.5.3"
+  }
+}

@@ -1,0 +1,588 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Coordinate picker — create-onboarding-video</title>
+    <style>
+      :root {
+        --green: #13715b;
+        --border: #d0d5dd;
+        --bg: #fafafa;
+        --text: #101828;
+        --muted: #475467;
+        --accent: #ff00ff;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        color: var(--text);
+        background: var(--bg);
+      }
+      header {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--border);
+        background: #fff;
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      header h1 {
+        font-size: 16px;
+        margin: 0;
+        font-weight: 700;
+      }
+      header .muted {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .toolbar {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .toolbar label {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .toolbar input[type="number"] {
+        width: 80px;
+        height: 30px;
+        padding: 0 8px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        font-size: 13px;
+      }
+      .toolbar select,
+      .toolbar input[type="file"] {
+        height: 30px;
+        font-size: 13px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 0 8px;
+        background: #fff;
+      }
+      .toolbar button {
+        height: 30px;
+        padding: 0 12px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: #fff;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .toolbar button.primary {
+        background: var(--green);
+        color: #fff;
+        border-color: var(--green);
+        font-weight: 600;
+      }
+      .toolbar button.danger {
+        color: #b42318;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        height: calc(100vh - 65px);
+      }
+      #canvasWrap {
+        position: relative;
+        overflow: auto;
+        background:
+          linear-gradient(45deg, #f0f0f0 25%, transparent 25%) 0 0,
+          linear-gradient(-45deg, #f0f0f0 25%, transparent 25%) 0 10px,
+          linear-gradient(45deg, transparent 75%, #f0f0f0 75%) 10px -10px,
+          linear-gradient(-45deg, transparent 75%, #f0f0f0 75%) -10px 0;
+        background-color: #fafafa;
+        background-size: 20px 20px;
+        padding: 20px;
+      }
+      #canvas {
+        position: relative;
+        background: #fff;
+        box-shadow: 0 4px 24px rgba(16, 24, 40, 0.08);
+        cursor: crosshair;
+      }
+      #canvas img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        pointer-events: none;
+        user-select: none;
+      }
+      .marker {
+        position: absolute;
+        pointer-events: none;
+      }
+      .marker .ring {
+        position: absolute;
+        left: -8px;
+        top: -8px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid var(--accent);
+      }
+      .marker .label {
+        position: absolute;
+        left: 12px;
+        top: 8px;
+        background: var(--accent);
+        color: #fff;
+        font-size: 11px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        padding: 3px 6px;
+        border-radius: 3px;
+        white-space: nowrap;
+      }
+      .marker.center .ring {
+        border-color: #2563eb;
+      }
+      .marker.center .label {
+        background: #2563eb;
+      }
+      .marker.click .ring {
+        border-color: var(--green);
+        background: rgba(19, 113, 91, 0.15);
+      }
+      .marker.click .label {
+        background: var(--green);
+      }
+      svg.path {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      svg.path line {
+        stroke: var(--accent);
+        stroke-width: 1.5;
+        stroke-dasharray: 4 4;
+      }
+      aside {
+        border-left: 1px solid var(--border);
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      aside h2 {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 0;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--border);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+      .points {
+        flex: 1;
+        overflow: auto;
+        padding: 8px;
+      }
+      .point {
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        padding: 10px;
+        margin-bottom: 8px;
+        background: #fff;
+        font-size: 13px;
+      }
+      .point .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .point .role {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 10px;
+        letter-spacing: 0.04em;
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+      .point .role.center {
+        background: #dbeafe;
+        color: #2563eb;
+      }
+      .point .role.waypoint {
+        background: #fce7f3;
+        color: #be185d;
+      }
+      .point .coords {
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .point input[type="number"] {
+        width: 64px;
+        height: 26px;
+        padding: 0 6px;
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        font-size: 12px;
+      }
+      .point label {
+        font-size: 12px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .point .remove {
+        margin-left: auto;
+        color: #b42318;
+        background: transparent;
+        border: 0;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .output {
+        border-top: 1px solid var(--border);
+        background: #f9fafb;
+      }
+      .output pre {
+        margin: 0;
+        padding: 14px;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        max-height: 280px;
+        overflow: auto;
+      }
+      .output .copyrow {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 14px;
+        border-top: 1px solid var(--border);
+      }
+      .empty {
+        padding: 30px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Coordinate picker</h1>
+      <span class="muted">→ Pointer waypoints in canvas px</span>
+      <div class="toolbar">
+        <input type="file" id="file" accept="image/*" />
+        <label>Canvas
+          <input type="number" id="canvasW" value="1280" min="100" />×<input type="number" id="canvasH" value="960" min="100" />
+        </label>
+        <label>Mode
+          <select id="mode">
+            <option value="waypoint">Waypoint (click)</option>
+            <option value="center">Set center (fade-in)</option>
+            <option value="waypoint-noclick">Waypoint (no click)</option>
+          </select>
+        </label>
+        <label>Default arrive Δ
+          <input type="number" id="frameStep" value="20" min="1" />
+        </label>
+        <button id="clear" class="danger">Clear</button>
+      </div>
+    </header>
+    <main>
+      <div id="canvasWrap">
+        <div id="canvas">
+          <svg class="path" id="pathSvg"></svg>
+        </div>
+      </div>
+      <aside>
+        <h2>Points</h2>
+        <div class="points" id="points"></div>
+        <div class="output">
+          <h2>Pointer config</h2>
+          <pre id="output">// Place a center and at least one waypoint to generate config.</pre>
+          <div class="copyrow">
+            <span class="muted" style="font-size: 12px">JSX-ready, paste into your scene</span>
+            <button id="copy" class="primary">Copy</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <script>
+      const $ = (id) => document.getElementById(id);
+      const SVG_NS = "http://www.w3.org/2000/svg";
+      const state = {
+        imgURL: null,
+        imgW: 0,
+        imgH: 0,
+        canvasW: 1280,
+        canvasH: 960,
+        center: null,
+        waypoints: [],
+      };
+
+      const canvasEl = $("canvas");
+      const pathSvg = $("pathSvg");
+
+      function el(tag, attrs = {}, text = null) {
+        const node = document.createElement(tag);
+        for (const [k, v] of Object.entries(attrs)) {
+          if (k === "class") node.className = v;
+          else if (k === "style") node.style.cssText = v;
+          else if (k.startsWith("data-")) node.setAttribute(k, v);
+          else if (k === "checked" && v) node.checked = true;
+          else node[k] = v;
+        }
+        if (text !== null) node.textContent = text;
+        return node;
+      }
+
+      function syncCanvasSize() {
+        state.canvasW = parseInt($("canvasW").value, 10) || 1280;
+        state.canvasH = parseInt($("canvasH").value, 10) || 960;
+        const wrap = $("canvasWrap");
+        const availW = wrap.clientWidth - 40;
+        const availH = wrap.clientHeight - 40;
+        const scale = Math.min(availW / state.canvasW, availH / state.canvasH, 1);
+        const w = state.canvasW * scale;
+        const h = state.canvasH * scale;
+        canvasEl.style.width = w + "px";
+        canvasEl.style.height = h + "px";
+        pathSvg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+        pathSvg.setAttribute("width", w);
+        pathSvg.setAttribute("height", h);
+        renderMarkers();
+      }
+
+      $("canvasW").addEventListener("input", syncCanvasSize);
+      $("canvasH").addEventListener("input", syncCanvasSize);
+      window.addEventListener("resize", syncCanvasSize);
+
+      $("file").addEventListener("change", (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        const url = URL.createObjectURL(f);
+        const img = new Image();
+        img.onload = () => {
+          state.imgW = img.naturalWidth;
+          state.imgH = img.naturalHeight;
+          const aspect = img.naturalHeight / img.naturalWidth;
+          state.canvasH = Math.round(state.canvasW * aspect);
+          $("canvasH").value = state.canvasH;
+          [...canvasEl.querySelectorAll("img")].forEach((n) => n.remove());
+          const tag = el("img", { src: url });
+          canvasEl.insertBefore(tag, pathSvg);
+          state.imgURL = url;
+          syncCanvasSize();
+        };
+        img.src = url;
+      });
+
+      canvasEl.addEventListener("click", (e) => {
+        const rect = canvasEl.getBoundingClientRect();
+        const dispX = e.clientX - rect.left;
+        const dispY = e.clientY - rect.top;
+        const x = Math.round((dispX / rect.width) * state.canvasW);
+        const y = Math.round((dispY / rect.height) * state.canvasH);
+        const mode = $("mode").value;
+        if (mode === "center") {
+          state.center = { x, y };
+        } else {
+          const click = mode === "waypoint";
+          const last = state.waypoints[state.waypoints.length - 1];
+          const arriveFrame =
+            (last ? last.arriveFrame : 0) + parseInt($("frameStep").value, 10);
+          state.waypoints.push({ x, y, arriveFrame, click });
+        }
+        renderMarkers();
+        renderPoints();
+        renderOutput();
+      });
+
+      $("clear").addEventListener("click", () => {
+        state.center = null;
+        state.waypoints = [];
+        renderMarkers();
+        renderPoints();
+        renderOutput();
+      });
+
+      function canvasToDisplay(x, y) {
+        const rect = canvasEl.getBoundingClientRect();
+        return {
+          x: (x / state.canvasW) * rect.width,
+          y: (y / state.canvasH) * rect.height,
+        };
+      }
+
+      function renderMarkers() {
+        [...canvasEl.querySelectorAll(".marker")].forEach((n) => n.remove());
+        while (pathSvg.firstChild) pathSvg.removeChild(pathSvg.firstChild);
+
+        const all = [];
+        if (state.center) all.push({ ...state.center, role: "center" });
+        state.waypoints.forEach((w, i) =>
+          all.push({ ...w, role: "waypoint", index: i })
+        );
+
+        for (let i = 1; i < all.length; i++) {
+          const a = canvasToDisplay(all[i - 1].x, all[i - 1].y);
+          const b = canvasToDisplay(all[i].x, all[i].y);
+          const line = document.createElementNS(SVG_NS, "line");
+          line.setAttribute("x1", a.x);
+          line.setAttribute("y1", a.y);
+          line.setAttribute("x2", b.x);
+          line.setAttribute("y2", b.y);
+          pathSvg.appendChild(line);
+        }
+
+        all.forEach((p) => {
+          const d = canvasToDisplay(p.x, p.y);
+          const cls =
+            "marker " +
+            (p.role === "center" ? "center" : p.click ? "click" : "");
+          const wrap = el("div", {
+            class: cls,
+            style: `left:${d.x}px;top:${d.y}px;`,
+          });
+          wrap.appendChild(el("div", { class: "ring" }));
+          const labelText =
+            p.role === "center"
+              ? `center (${p.x},${p.y})`
+              : `${p.click ? "click" : "wp"} ${p.index} (${p.x},${p.y}) f${p.arriveFrame}`;
+          wrap.appendChild(el("div", { class: "label" }, labelText));
+          canvasEl.appendChild(wrap);
+        });
+      }
+
+      function renderPoints() {
+        const root = $("points");
+        while (root.firstChild) root.removeChild(root.firstChild);
+
+        if (!state.center && state.waypoints.length === 0) {
+          root.appendChild(
+            el(
+              "div",
+              { class: "empty" },
+              "Drop a screenshot. Click on it to place a center, then waypoints."
+            )
+          );
+          return;
+        }
+
+        if (state.center) {
+          const div = el("div", { class: "point" });
+          const row = el("div", { class: "row" });
+          row.appendChild(el("span", { class: "role center" }, "center"));
+          row.appendChild(
+            el("span", { class: "coords" }, `x=${state.center.x}, y=${state.center.y}`)
+          );
+          const rm = el("button", { class: "remove", "data-role": "center" }, "remove");
+          rm.addEventListener("click", () => {
+            state.center = null;
+            renderMarkers();
+            renderPoints();
+            renderOutput();
+          });
+          row.appendChild(rm);
+          div.appendChild(row);
+          root.appendChild(div);
+        }
+
+        state.waypoints.forEach((w, i) => {
+          const div = el("div", { class: "point" });
+          const row = el("div", { class: "row" });
+          row.appendChild(el("span", { class: "role waypoint" }, `wp ${i}`));
+          row.appendChild(
+            el("span", { class: "coords" }, `x=${w.x}, y=${w.y}`)
+          );
+
+          const clickLabel = el("label", {});
+          const clickBox = el("input", { type: "checkbox", checked: w.click });
+          clickBox.addEventListener("change", () => {
+            state.waypoints[i].click = clickBox.checked;
+            renderMarkers();
+            renderOutput();
+          });
+          clickLabel.appendChild(clickBox);
+          clickLabel.appendChild(document.createTextNode(" click"));
+          row.appendChild(clickLabel);
+
+          const arriveLabel = el("label", {}, "arrive ");
+          const arriveBox = el("input", {
+            type: "number",
+            value: String(w.arriveFrame),
+            min: "0",
+          });
+          arriveBox.addEventListener("input", () => {
+            state.waypoints[i].arriveFrame = parseInt(arriveBox.value, 10) || 0;
+            renderMarkers();
+            renderOutput();
+          });
+          arriveLabel.appendChild(arriveBox);
+          row.appendChild(arriveLabel);
+
+          const rm = el("button", { class: "remove" }, "remove");
+          rm.addEventListener("click", () => {
+            state.waypoints.splice(i, 1);
+            renderMarkers();
+            renderPoints();
+            renderOutput();
+          });
+          row.appendChild(rm);
+
+          div.appendChild(row);
+          root.appendChild(div);
+        });
+      }
+
+      function renderOutput() {
+        const out = $("output");
+        if (!state.center || state.waypoints.length === 0) {
+          out.textContent =
+            "// Place a center and at least one waypoint to generate config.";
+          return;
+        }
+        const lastFrame =
+          state.waypoints[state.waypoints.length - 1].arriveFrame;
+        const fadeOut = lastFrame + 18;
+        const wpStr = state.waypoints
+          .map(
+            (w) =>
+              `    { x: ${w.x}, y: ${w.y}, arriveFrame: ${w.arriveFrame}${w.click ? ", click: true" : ""} },`
+          )
+          .join("\n");
+        out.textContent = `<Pointer
+  fadeInFrame={0}
+  fadeOutFrame={${fadeOut}}
+  centerX={${state.center.x}}
+  centerY={${state.center.y}}
+  waypoints={[
+${wpStr}
+  ]}
+/>`;
+      }
+
+      $("copy").addEventListener("click", async () => {
+        const text = $("output").textContent;
+        await navigator.clipboard.writeText(text);
+        const btn = $("copy");
+        const orig = btn.textContent;
+        btn.textContent = "Copied";
+        setTimeout(() => (btn.textContent = orig), 1200);
+      });
+
+      renderPoints();
+      syncCanvasSize();
+    </script>
+  </body>
+</html>
